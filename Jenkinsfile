@@ -13,7 +13,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    // Change the branch name from 'master' to 'main'
                     dir('terraform') {
                         git url: 'https://github.com/Jatin2798/TF_Jenkins_AWS.git', branch: 'main'
                     }
@@ -23,9 +22,14 @@ pipeline {
 
         stage('Plan') {
             steps {
-                bat 'echo %CD%; cd terraform/; terraform init'
-                bat 'echo %CD%; cd terraform/; terraform plan -out=tfplan'
-                bat 'echo %CD%; cd terraform/; terraform show -no-color tfplan > tfplan.txt'
+                bat 'cd terraform && terraform init -no-color > terraform_init.log 2>&1'
+                archiveArtifacts artifacts: 'terraform/terraform_init.log', allowEmptyArchive: true
+
+                bat 'cd terraform && terraform plan -out=tfplan -no-color > terraform_plan.log 2>&1'
+                archiveArtifacts artifacts: 'terraform/terraform_plan.log', allowEmptyArchive: true
+
+                bat 'cd terraform && terraform show -no-color tfplan > tfplan.txt'
+                archiveArtifacts artifacts: 'terraform/tfplan.txt', allowEmptyArchive: true
             }
         }
 
@@ -46,7 +50,8 @@ pipeline {
 
         stage('Apply') {
             steps {
-                bat 'echo %CD%; cd terraform/; terraform apply -input=false tfplan'
+                bat 'cd terraform && terraform apply -input=false tfplan -no-color > terraform_apply.log 2>&1'
+                archiveArtifacts artifacts: 'terraform/terraform_apply.log', allowEmptyArchive: true
             }
         }
     }
